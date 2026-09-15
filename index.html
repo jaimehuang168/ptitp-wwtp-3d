@@ -624,9 +624,9 @@ applyCut();applyGround();
 function resize(){const r=view.getBoundingClientRect();renderer.setSize(r.width,r.height);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
 const tmp=new THREE.Vector3();let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+function loop(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;
  if(anim){anim(now);applyCam();}
- if(flowOn)flowDots.forEach(d=>{d.userData.t=(d.userData.t+dt*.55/d.userData.L)%1;d.position.copy(d.userData.fp.path.getPointAt(d.userData.t));});
+ if(flowOn)flowDots.forEach(d=>{d.userData.t=(d.userData.t+dt*.55/d.userData.L)%1;const pt=d.userData.fp.path.getPointAt(Math.max(0,Math.min(d.userData.t,0.999)));if(pt)d.position.copy(pt);});
  const tt=now/1000;
  carriers.forEach(c=>{const b=c.userData.base,p=c.userData.ph;c.position.set(b.x+Math.sin(tt*.7+p)*.12,b.y+Math.sin(tt*.9+p*2)*.18,b.z+Math.cos(tt*.6+p)*.1);c.rotation.x+=dt*.8;});
  bubbles.forEach(b=>{b.position.y+=dt*b.userData.v;if(b.position.y>WL)b.position.y=YB+.15;});
