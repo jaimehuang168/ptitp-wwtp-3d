@@ -22,6 +22,11 @@ canvas{display:block;touch-action:none}
 #tools button:hover,#tools label:hover{border-color:var(--acc)}
 #legend{position:absolute;right:14px;top:50px;background:#16212ccc;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px}
 #legend i{display:inline-block;width:22px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+#nogl{position:absolute;inset:0;overflow:auto;padding:70px 16px 70px;background:var(--bg)}
+#nogl .ngbox{max-width:760px;margin:0 auto 12px;border:1px solid #7a5b12;background:#2a2210;border-radius:10px;padding:10px 14px;font-size:13px}
+#nogl code{background:#0008;padding:1px 5px;border-radius:4px}
+#nogl img{display:block;max-width:760px;width:100%;margin:0 auto;border-radius:10px}
+#nogl .ngbtn{max-width:760px;margin:10px auto;display:flex;flex-wrap:wrap;gap:6px}
 #tip{position:absolute;pointer-events:none;background:#000c;padding:3px 8px;border-radius:6px;font-size:12px;display:none;white-space:nowrap}
 .lbl{position:absolute;transform:translate(-50%,-100%);font-size:11px;padding:2px 6px;border-radius:5px;background:#0f1720d9;border:1px solid var(--line);white-space:nowrap;pointer-events:auto;cursor:pointer}
 .lbl:hover{border-color:var(--acc)}
@@ -258,7 +263,17 @@ UNITS.PA.dim[0]="內淨 2.0 × 4.2 m，底 −1.50，牆高約 4.4 m";
 
 // ---------- THREE scene ----------
 const view=document.getElementById('view');
-const renderer=new THREE.WebGLRenderer({antialias:true});
+let NOGL=false,renderer;
+try{const tc=document.createElement('canvas');if(!(tc.getContext('webgl2')||tc.getContext('webgl')))throw new Error('no webgl');renderer=new THREE.WebGLRenderer({antialias:true});}
+catch(err){NOGL=true;console.warn('WebGL unavailable',err);
+ renderer={domElement:document.createElement('canvas'),shadowMap:{},setPixelRatio(){},setSize(){},render(){}};
+ const fb=document.createElement('div');fb.id='nogl';
+ fb.innerHTML=`<div class="ngbox"><b>⚠ 此瀏覽器無法啟用 3D（WebGL）· Este navegador no puede mostrar 3D (WebGL)</b>
+ <p>請開啟硬體加速：Chrome/Edge 設定 → 系統 →「可用時使用圖形加速」開啟後重新啟動瀏覽器；或於 <code>chrome://gpu</code> 確認 WebGL 狀態。遠端桌面、虛擬機或舊顯示卡驅動也可能造成此問題。</p>
+ <p class="es-p">Active la aceleración por hardware: Configuración de Chrome/Edge → Sistema → «Usar aceleración gráfica cuando esté disponible» y reinicie el navegador; verifique el estado en <code>chrome://gpu</code>. El escritorio remoto, máquinas virtuales o controladores de video antiguos también pueden causarlo.</p>
+ <p>以下為 2D 示意圖，點選按鈕仍可查詢各單元與技術資料 · Vista 2D: use los botones para consultar cada unidad y su documentación.</p></div>
+ <img src="img/render-3d.jpeg" alt="PTE PTITP render"><div class="ngbtn"></div>`;
+ document.getElementById('view').appendChild(fb);}
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 view.appendChild(renderer.domElement);
@@ -575,6 +590,7 @@ function applyLang(){
   el.innerHTML = LANG==="zh"?v[0]:LANG==="es"?v[1]:(bi==="stack"?`${v[0]}<span class="es">${v[1]}</span>`:bi==="none"?v[0]:`${v[0]} · ${v[1].replace(/^⟲ /,'')}`);});
  document.querySelectorAll('#langSw button').forEach(b=>b.classList.toggle('on',b.dataset.l===LANG));
  unitLabelEls.forEach(({el,k})=>el.textContent=T1(...UNITS[k].sh));
+ const nb=document.querySelector('#nogl .ngbtn');if(nb){nb.innerHTML=Object.keys(UNITS).map(k=>`<button class="chip" data-unit="${k}">${T1(...UNITS[k].sh)}</button>`).join('');nb.querySelectorAll('[data-unit]').forEach(b=>b.onclick=()=>selectUnit(b.dataset.unit));}
  render();}
 document.querySelectorAll('#langSw button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem("ptitp_lang",LANG);}catch(e){}applyLang();});
 
@@ -600,7 +616,7 @@ function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
  [eqObjs["AG1-PA"],eqObjs["AG2-PA"]].forEach(g=>{if(g&&g.userData.spin)g.userData.spin.rotation.z+=dt*8;});
  renderer.render(scene,camera);
  const W=cv.clientWidth,H=cv.clientHeight;
- labels.forEach(l=>{const vis=l.cls==='eq'?cEq.checked:cLbl.checked;if(!vis){l.el.style.display='none';return;}
+ labels.forEach(l=>{const vis=!NOGL&&(l.cls==='eq'?cEq.checked:cLbl.checked);if(!vis){l.el.style.display='none';return;}
   tmp.copy(l.pos).project(camera);if(tmp.z>1){l.el.style.display='none';return;}
   l.el.style.display='block';l.el.style.left=((tmp.x+1)/2*W)+'px';l.el.style.top=((1-tmp.y)/2*H)+'px';});
  requestAnimationFrame(loop);}
