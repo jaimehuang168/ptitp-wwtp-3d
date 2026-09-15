@@ -88,6 +88,7 @@ ul.gl i{display:inline-block;width:26px;height:5px;border-radius:2px;margin-top:
    <label><input type="checkbox" id="cFlow" checked><span data-i="tFlow"></span></label>
    <label><input type="checkbox" id="cLbl" checked><span data-i="tLbl"></span></label>
    <label><input type="checkbox" id="cEq"><span data-i="tEq"></span></label>
+   <label><input type="checkbox" id="cGnd" checked><span data-i="tGnd"></span></label>
    <label><input type="checkbox" id="cX"><span data-i="tX"></span></label>
   </div>
   <div id="tip"></div>
@@ -301,9 +302,14 @@ const root=new THREE.Group();root.position.set(OX,0,OZ);scene.add(root);
 
 // ground block with soil cut
 const G=new THREE.Group();root.add(G);
-box(24,0.15,18,mat.grass,7,-0.075,3.5,G);
-const soil=box(24,3.2,18,mat.soil,7,-1.75,3.5,G);soil.receiveShadow=true;
-box(15,0.05,4.2,mat.floor,6,0.02,8.1,G); // paved apron
+// ground split: outer ring + plant footprint (footprint hidden in cutaway / ground off)
+const gMat={grass:mat.grass.clone(),soil:mat.soil.clone(),floor:mat.floor.clone()};Object.values(gMat).forEach(m=>{m.transparent=true;});
+const groundAll=[],groundCore=[];
+function gpart(x0,x1,z0,z1,core){const w=x1-x0,d=z1-z0,cx=(x0+x1)/2,cz=(z0+z1)/2;
+ const a=box(w,.15,d,gMat.grass,cx,-.075,cz,G),b=box(w,3.25,d,gMat.soil,cx,-1.775,cz,G);b.receiveShadow=true;
+ groundAll.push(a,b);if(core)groundCore.push(a,b);}
+gpart(-5,-0.2,-5.5,12.5);gpart(14.3,19,-5.5,12.5);gpart(-0.2,14.3,-5.5,-1.6);gpart(-0.2,14.3,7.4,12.5);gpart(-0.2,14.3,-1.6,7.4,true);
+{const ap=box(15,0.05,2.8,gMat.floor,6,0.02,8.8,G);groundAll.push(ap);} // paved apron
 // fence
 for(let i=0;i<=24;i+=2){cyl(.05,1.6,mat.concrete,-5+i,.8,-5.5,G,6);cyl(.05,1.6,mat.concrete,-5+i,.8,12.5,G,6);}
 for(let j=0;j<=18;j+=2){cyl(.05,1.6,mat.concrete,-5,.8,-5.5+j,G,6);cyl(.05,1.6,mat.concrete,19,.8,-5.5+j,G,6);}
@@ -556,7 +562,7 @@ function render(){
   ${H3("2. 點選查詢","2. Consultar información")}
   ${L([["①","點選槽體或房間 → 右側顯示功能說明、尺寸、裝置功率、設備清單與相關文件","Clic en un tanque o sala → el panel muestra función, dimensiones, potencia instalada, equipos y documentos"],["②","點選設備（泵、鼓風機、閥、儀表…）→ 顯示品牌、型號、功率與該設備手冊","Clic en un equipo (bomba, soplador, válvula, instrumento…) → marca, modelo, potencia y su manual"],["③","點選藍色文件卡 → 以新分頁開啟 PDF；操作手冊會直接跳到對應頁碼","Clic en una tarjeta de documento → abre el PDF en otra pestaña; el manual abre en la página correspondiente"],["④","黃色位號（TAG）可點選，模型會飛到該設備並高亮顯示","Los TAG en amarillo son clicables: la cámara vuela al equipo y lo resalta"]])}
   ${H3("3. 顯示選項（左下角）","3. Opciones de visualización (abajo a la izquierda)")}
-  ${L([["剖視 / Corte","隱藏槽頂板、屋頂與房間前牆，看見內部設備","Oculta losas, techo y muros frontales para ver el interior"],["水流 / Flujo","管線中水流方向的動畫","Animación del sentido del flujo en las tuberías"],["標籤 / Etiquetas","顯示處理單元名稱","Muestra los nombres de las unidades"],["位號 / TAG","顯示所有設備位號（與 P&ID 一致）","Muestra los TAG de todos los equipos (iguales al P&ID)"],["X 光 / Rayos X","牆體半透明","Muros semitransparentes"]])}
+  ${L([["剖視 / Corte","隱藏槽頂板、屋頂、房間前牆與廠區範圍內的土壤，看見內部與地下設備","Oculta losas, techo, muros frontales y el suelo bajo la planta para ver el interior y lo enterrado"],["水流 / Flujo","管線中水流方向的動畫","Animación del sentido del flujo en las tuberías"],["標籤 / Etiquetas","顯示處理單元名稱","Muestra los nombres de las unidades"],["位號 / TAG","顯示所有設備位號（與 P&ID 一致）","Muestra los TAG de todos los equipos (iguales al P&ID)"],["X 光 / Rayos X","牆體與地層半透明，可看穿地下槽體","Muros y terreno semitransparentes para ver las estructuras enterradas"],["地層 / Terreno","關閉後移除土壤，完整顯示地下結構（槽底 −1.50、進流井 −3.00）","Desactivado, quita el suelo y muestra toda la estructura enterrada (fondo −1,50; pozo de entrada −3,00)"]])}
   ${H3("4. 分頁","4. Pestañas")}
   ${L([["單元 / Unidad","目前選取的單元或設備","Unidad o equipo seleccionado"],["設備 / Equipos","49 項設備，可依位號、名稱、品牌搜尋","49 equipos; búsqueda por TAG, nombre o marca"],["資料 / Docs","全部技術文件依類別分組","Toda la documentación técnica agrupada por categoría"],["參數 / Diseño","進出流水質、電力、維護頻率","Calidad de entrada/salida, energía y mantenimiento"]])}
   ${H3("5. 顏色圖例","5. Leyenda de colores")}
@@ -581,7 +587,7 @@ const UI={
  h1:["PTITP 污水處理廠 · MBBR 400 m³/d","PTE PTITP · MBBR 400 m³/d"],
  h1s:["台巴智慧科技園區 Parque Tecnológico Inteligente Taiwán-Paraguay","Planta de Tratamiento de Efluentes — Parque Tecnológico Inteligente Taiwán-Paraguay"],
  lgP:["製程管線","Línea de proceso"],lgA:["低壓空氣","Aire baja presión"],lgC:["加藥管線","Dosif. químicos"],
- bReset:["⟲ 重設視角","⟲ Vista inicial"],tCut:["剖視","Corte"],tFlow:["水流動畫","Animar flujo"],tLbl:["單元標籤","Etiquetas"],tEq:["設備位號","TAG equipos"],tX:["X 光透視","Rayos X"],
+ bReset:["⟲ 重設視角","⟲ Vista inicial"],tCut:["剖視","Corte"],tFlow:["水流動畫","Animar flujo"],tLbl:["單元標籤","Etiquetas"],tEq:["設備位號","TAG equipos"],tX:["X 光透視","Rayos X"],tGnd:["地層","Terreno"],
  tab_unit:["單元","Unidad"],tab_eq:["設備","Equipos"],tab_docs:["技術資料","Documentos"],tab_info:["設計參數","Diseño"],tab_help:["說明","Guía"]
 };
 function applyLang(){
@@ -597,11 +603,16 @@ document.querySelectorAll('#langSw button').forEach(b=>b.onclick=()=>{LANG=b.dat
 // ---------- toggles ----------
 let cutaway=true,flowOn=true;
 const cCut=document.getElementById('cCut'),cFlow=document.getElementById('cFlow'),cLbl=document.getElementById('cLbl'),cEq=document.getElementById('cEq'),cX=document.getElementById('cX');
-function applyCut(){cutaway=cCut.checked;lids.forEach(l=>l.visible=!cutaway);}
+function applyCut(){cutaway=cCut.checked;lids.forEach(l=>l.visible=!cutaway);if(typeof applyGround==='function')applyGround();}
 cCut.onchange=applyCut;cFlow.onchange=()=>{flowOn=cFlow.checked;flowDots.forEach(d=>d.visible=flowOn);};
-cX.onchange=()=>xrayMats.forEach(m=>{m.opacity=cX.checked?.25:1;m.depthWrite=!cX.checked;});
+const cGnd=document.getElementById('cGnd');
+function applyGround(){const on=cGnd.checked,x=cX.checked;
+ groundAll.forEach(o=>o.visible=on);groundCore.forEach(o=>o.visible=on&&!cutaway);
+ gMat.soil.opacity=x?.12:1;gMat.grass.opacity=x?.3:1;gMat.floor.opacity=x?.3:1;Object.values(gMat).forEach(m=>{m.depthWrite=!x;m.needsUpdate=true;});}
+cGnd.onchange=applyGround;
+cX.onchange=()=>{xrayMats.forEach(m=>{m.opacity=cX.checked?.25:1;m.depthWrite=!cX.checked;});applyGround();};
 document.getElementById('bReset').onclick=()=>{ctl.th=-0.75;ctl.ph=0.95;flyTo(new THREE.Vector3(0,.5,0),30);clearHL();};
-applyCut();
+applyCut();applyGround();
 
 // ---------- loop ----------
 function resize(){const r=view.getBoundingClientRect();renderer.setSize(r.width,r.height);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}
