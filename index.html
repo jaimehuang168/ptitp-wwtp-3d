@@ -104,6 +104,12 @@ ul.gl i{display:inline-block;width:26px;height:5px;border-radius:2px;margin-top:
   <div id="pane"></div>
  </div>
 </div>
+<script>
+window.__errs=[];function __showErr(msg){try{__errs.push(msg);let b=document.getElementById('errbox');if(!b){b=document.createElement('div');b.id='errbox';b.style.cssText='position:fixed;left:8px;right:8px;top:8px;z-index:99;background:#5a1010;color:#fff;font:12px/1.4 monospace;padding:8px 10px;border-radius:8px;white-space:pre-wrap;max-height:40vh;overflow:auto';document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(b));if(document.body)document.body.appendChild(b);}
+b.textContent='⚠ 載入錯誤 / Error de carga（請截圖回報 / envíe captura）:\n'+__errs.join('\n')+'\nUA: '+navigator.userAgent;}catch(e){}}
+window.addEventListener('error',e=>__showErr((e.message||'error')+' @'+(e.lineno||'')+':'+(e.colno||'')));
+window.addEventListener('unhandledrejection',e=>__showErr('promise: '+(e.reason&&e.reason.message||e.reason)));
+</script>
 <script>/**
  * @license
  * Copyright 2010-2023 Three.js Authors
@@ -265,7 +271,7 @@ UNITS.PA.dim[0]="內淨 2.0 × 4.2 m，底 −1.50，牆高約 4.4 m";
 // ---------- THREE scene ----------
 const view=document.getElementById('view');
 let NOGL=false,renderer;
-try{const tc=document.createElement('canvas');if(!(tc.getContext('webgl2')||tc.getContext('webgl')))throw new Error('no webgl');renderer=new THREE.WebGLRenderer({antialias:true});}
+try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'default',failIfMajorPerformanceCaveat:false});}
 catch(err){NOGL=true;console.warn('WebGL unavailable',err);
  renderer={domElement:document.createElement('canvas'),shadowMap:{},setPixelRatio(){},setSize(){},render(){}};
  const fb=document.createElement('div');fb.id='nogl';
